@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ExternalLink, 
   Calendar, 
@@ -23,7 +23,7 @@ import {
 import { useApp } from '../contexts/AppContext';
 
 const GoogleIntegrations: React.FC = () => {
-  const { settings } = useApp();
+  const { settings, getStudents } = useApp();
   const [isConnected, setIsConnected] = useState({
     forms: false,
     classroom: false,
@@ -94,26 +94,24 @@ const GoogleIntegrations: React.FC = () => {
     }
   ]);
 
-  const [studentsData, setStudentsData] = useState([
-    {
-      id: '1',
-      name: settings.language === 'th' ? 'นางสาวสมใจ ใจดี' : 'Miss Somjai Jaidee',
-      email: 'somjai.j@school.com',
-      class: 'ม.1/1',
-      lastActive: '2024-01-15',
-      assignments: { submitted: 8, pending: 2, total: 10 },
-      avgGrade: 85
-    },
-    {
-      id: '2',
-      name: settings.language === 'th' ? 'นายสมศักดิ์ เรียนดี' : 'Mr. Somsak Riandee',
-      email: 'somsak.r@school.com',
-      class: 'ม.1/1',
-      lastActive: '2024-01-14',
-      assignments: { submitted: 9, pending: 1, total: 10 },
-      avgGrade: 92
+  const [studentsData, setStudentsData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadStudents();
+  }, []);
+
+  const loadStudents = async () => {
+    setIsLoading(true);
+    try {
+      const students = await getStudents();
+      setStudentsData(students);
+    } catch (error) {
+      console.error('Error loading students:', error);
+    } finally {
+      setIsLoading(false);
     }
-  ]);
+  };
 
   const connectService = (service: string) => {
     // Simulate connection process with loading state
@@ -159,28 +157,6 @@ const GoogleIntegrations: React.FC = () => {
 
   const syncStudentsFromClassroom = () => {
     // Simulate syncing students from Google Classroom
-    const newStudents = [
-      {
-        id: '3',
-        name: settings.language === 'th' ? 'นางสาวปรียา ขยันเรียน' : 'Miss Priya Kayan',
-        email: 'priya.k@school.com',
-        class: 'ม.1/2',
-        lastActive: '2024-01-13',
-        assignments: { submitted: 7, pending: 3, total: 10 },
-        avgGrade: 78
-      },
-      {
-        id: '4',
-        name: settings.language === 'th' ? 'นายวิชัย เก่งมาก' : 'Mr. Wichai Kengmak',
-        email: 'wichai.k@school.com',
-        class: 'ม.1/2',
-        lastActive: '2024-01-12',
-        assignments: { submitted: 6, pending: 4, total: 10 },
-        avgGrade: 73
-      }
-    ];
-
-    setStudentsData(prev => [...prev, ...newStudents]);
     alert(settings.language === 'th' ? 'ซิงค์ข้อมูลนักเรียนจาก Google Classroom สำเร็จ!' :
           settings.language === 'en' ? 'Successfully synced student data from Google Classroom!' :
           '成功从 Google Classroom 同步学生数据！');
@@ -188,22 +164,15 @@ const GoogleIntegrations: React.FC = () => {
 
   const syncStudentsFromTeams = () => {
     // Simulate syncing students from Microsoft Teams
-    const newStudents = [
-      {
-        id: '5',
-        name: settings.language === 'th' ? 'นางสาวสุดา ดีเด่น' : 'Miss Suda Deden',
-        email: 'suda.d@school.com',
-        class: 'ม.1/3',
-        lastActive: '2024-01-11',
-        assignments: { submitted: 8, pending: 2, total: 10 },
-        avgGrade: 88
-      }
-    ];
-
-    setStudentsData(prev => [...prev, ...newStudents]);
     alert(settings.language === 'th' ? 'ซิงค์ข้อมูลนักเรียนจาก Microsoft Teams สำเร็จ!' :
           settings.language === 'en' ? 'Successfully synced student data from Microsoft Teams!' :
           '成功从 Microsoft Teams 同步学生数据！');
+  };
+
+  const addNewStudent = () => {
+    alert(settings.language === 'th' ? 'กรุณาเพิ่มนักเรียนในหน้าข้อมูลนักเรียน' :
+          settings.language === 'en' ? 'Please add students in the Student Profiles page' :
+          '请在学生档案页面添加学生');
   };
 
   return (
@@ -269,7 +238,7 @@ const GoogleIntegrations: React.FC = () => {
               <button 
                 onClick={() => connectService(service.key)}
                 disabled={isConnecting[service.key as keyof typeof isConnecting]}
-                className="w-full px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm flex items-center justify-center disabled:opacity-70"
+                className="w-full px-3 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors text-sm flex items-center justify-center disabled:opacity-70"
               >
                 {isConnecting[service.key as keyof typeof isConnecting] ? (
                   <>
@@ -301,23 +270,8 @@ const GoogleIntegrations: React.FC = () => {
           </h3>
           <div className="flex space-x-2">
             <button 
-              onClick={() => {
-                const newId = `${Date.now()}`;
-                const newStudent = {
-                  id: newId,
-                  name: settings.language === 'th' ? 'นักเรียนใหม่' : 'New Student',
-                  email: 'new.student@school.com',
-                  class: 'ม.1/1',
-                  lastActive: new Date().toISOString().split('T')[0],
-                  assignments: { submitted: 0, pending: 0, total: 0 },
-                  avgGrade: 0
-                };
-                setStudentsData(prev => [...prev, newStudent]);
-                alert(settings.language === 'th' ? 'เพิ่มนักเรียนใหม่สำเร็จ! กรุณาแก้ไขข้อมูลให้ถูกต้อง' :
-                      settings.language === 'en' ? 'New student added successfully! Please edit the details.' :
-                      '成功添加新学生！请编辑详细信息。');
-              }}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm flex items-center"
+              onClick={addNewStudent}
+              className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-md hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors text-sm flex items-center"
             >
               <UserPlus className="h-4 w-4 mr-2" />
               {settings.language === 'th' ? 'เพิ่มนักเรียนใหม่' : 
@@ -349,79 +303,87 @@ const GoogleIntegrations: React.FC = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  {settings.language === 'th' ? 'ชื่อนักเรียน' : 
-                   settings.language === 'en' ? 'Student Name' : 
-                   '学生姓名'}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  {settings.language === 'th' ? 'อีเมล' : 
-                   settings.language === 'en' ? 'Email' : 
-                   '邮箱'}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  {settings.language === 'th' ? 'ชั้นเรียน' : 
-                   settings.language === 'en' ? 'Class' : 
-                   '班级'}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  {settings.language === 'th' ? 'งานที่ส่ง' : 
-                   settings.language === 'en' ? 'Assignments' : 
-                   '作业'}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  {settings.language === 'th' ? 'คะแนนเฉลี่ย' : 
-                   settings.language === 'en' ? 'Avg Grade' : 
-                   '平均成绩'}
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  {settings.language === 'th' ? 'การดำเนินการ' : 
-                   settings.language === 'en' ? 'Actions' : 
-                   '操作'}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {studentsData.map((student) => (
-                <tr key={student.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {student.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {student.email}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {student.class}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {student.assignments.submitted}/{student.assignments.total}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      student.avgGrade >= 90 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
-                      student.avgGrade >= 80 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
-                      student.avgGrade >= 70 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
-                      'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-                    }`}>
-                      {student.avgGrade}%
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3">
-                      {settings.language === 'th' ? 'ดูโปรไฟล์' : 
-                       settings.language === 'en' ? 'View Profile' : 
-                       '查看档案'}
-                    </button>
-                  </td>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    {settings.language === 'th' ? 'ชื่อนักเรียน' : 
+                     settings.language === 'en' ? 'Student Name' : 
+                     '学生姓名'}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    {settings.language === 'th' ? 'รหัสนักเรียน' : 
+                     settings.language === 'en' ? 'Student ID' : 
+                     '学号'}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    {settings.language === 'th' ? 'ชั้นเรียน' : 
+                     settings.language === 'en' ? 'Class' : 
+                     '班级'}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    {settings.language === 'th' ? 'เกรดเฉลี่ย' : 
+                     settings.language === 'en' ? 'Avg Grade' : 
+                     '平均成绩'}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    {settings.language === 'th' ? 'การดำเนินการ' : 
+                     settings.language === 'en' ? 'Actions' : 
+                     '操作'}
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {studentsData.length > 0 ? (
+                  studentsData.map((student) => (
+                    <tr key={student.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                        {student.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {student.studentId || student.student_id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {student.grade} {student.class && `/ ${student.class}`}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          (student.academicData?.overallGrade || 0) >= 90 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                          (student.academicData?.overallGrade || 0) >= 80 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+                          (student.academicData?.overallGrade || 0) >= 70 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
+                          'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                        }`}>
+                          {student.academicData?.overallGrade || 0}%
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3">
+                          {settings.language === 'th' ? 'ดูโปรไฟล์' : 
+                           settings.language === 'en' ? 'View Profile' : 
+                           '查看档案'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-500 dark:text-gray-400">
+                      {settings.language === 'th' ? 'ไม่พบข้อมูลนักเรียน กรุณาเพิ่มนักเรียนในหน้าข้อมูลนักเรียน' :
+                       settings.language === 'en' ? 'No student data found. Please add students in the Student Profiles page' :
+                       '未找到学生数据。请在学生档案页面添加学生'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Connected Services Content */}
