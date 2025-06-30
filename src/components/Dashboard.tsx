@@ -9,14 +9,14 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
-  const { user, t, getLessonPlans, getActivities, getTests, settings } = useApp();
+  const { user, t, getLessonPlans, getActivities, getTests, getStudents, settings } = useApp();
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [stats, setStats] = useState({
     lessonPlans: 0,
     activities: 0,
     tests: 0,
-    students: 120
+    students: 0
   });
 
   const upcomingTasks = [
@@ -68,10 +68,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
 
   const loadDashboardData = async () => {
     try {
-      const [lessonPlans, activities, tests] = await Promise.all([
+      const [lessonPlans, activities, tests, students] = await Promise.all([
         getLessonPlans(),
         getActivities(),
-        getTests()
+        getTests(),
+        getStudents()
       ]);
 
       // Update stats
@@ -79,7 +80,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onTabChange }) => {
         lessonPlans: lessonPlans.length,
         activities: activities.length,
         tests: tests.length,
-        students: 120 // This would come from actual student data
+        students: students.length
       });
 
       const allActivities = [
